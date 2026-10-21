@@ -1,0 +1,187 @@
+-- LocalScript (StarterPlayerScripts / StarterGui)
+-- Фейковый "локер": чёрный экран с ошибками -> мигающий красный экран -> синий экран с вводом кода.
+-- Эскейп-меню Роблокса работает всегда (GUI его не перекрывает).
+-- Появляется через START_DELAY сек после запуска и висит, пока не введут код PRANK + Enter
+-- или не нажмут RightShift.
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+
+local UNLOCK_CODE = "FUCKUXC2001"
+local START_DELAY = 1 -- через сколько секунд после запуска появится "блокировщик"
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "FakeLock"
+gui.IgnoreGuiInset = true
+gui.DisplayOrder = 999999
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- Звук (лежит внутри gui, поэтому пропадает вместе с ним при закрытии)
+local SOUND_ID = "rbxassetid://17422113153"
+local sound = Instance.new("Sound")
+sound.Name = "LockSound"
+sound.SoundId = SOUND_ID
+sound.Volume = 1
+sound.Looped = true
+sound.Parent = gui
+
+local closed = false
+local function close()
+	if closed then return end
+	closed = true
+	gui:Destroy()
+end
+
+local function makeLabel(parent, text, size, pos, color, align)
+	local l = Instance.new("TextLabel")
+	l.Size = size
+	l.Position = pos
+	l.BackgroundTransparency = 1
+	l.TextColor3 = color or Color3.new(1, 1, 1)
+	l.Font = Enum.Font.Code
+	l.TextScaled = true
+	l.TextXAlignment = align or Enum.TextXAlignment.Center
+	l.Text = text
+	l.Parent = parent
+	return l
+end
+
+local function makeScene(color)
+	local f = Instance.new("Frame")
+	f.Size = UDim2.fromScale(1, 1)
+	f.BackgroundColor3 = color
+	f.BorderSizePixel = 0
+	f.Active = true
+	f.Visible = false
+	f.Parent = gui
+	return f
+end
+
+local black = makeScene(Color3.new(0, 0, 0))
+local red = makeScene(Color3.fromRGB(200, 0, 0))
+local blue = makeScene(Color3.fromRGB(220, 0, 0))
+
+-- Подпись снизу слева (поверх всех сцен)
+local mark = makeLabel(gui, "", UDim2.fromOffset(260, 24),
+	UDim2.new(0, 12, 1, -34), Color3.new(1, 1, 1), Enum.TextXAlignment.Left)
+mark.ZIndex = 100
+mark.Visible = false -- появится вместе с блокировщиком
+
+-- Сцена 1: чёрный экран, ошибки загрузки
+local bootLabel = makeLabel(black, "", UDim2.fromScale(0.95, 0.5), UDim2.fromScale(0.03, 0.04),
+	Color3.new(1, 1, 1), Enum.TextXAlignment.Left)
+bootLabel.TextYAlignment = Enum.TextYAlignment.Top
+bootLabel.TextScaled = false
+bootLabel.TextSize = 36
+
+
+-- Сцена 2: красный мигающий экран
+
+-- Сцена 3: красный экран с вводом кода
+local title = makeLabel(blue, " Ваши файлы зашифрованы! ", UDim2.fromScale(0.3, 0.05),
+	UDim2.fromScale(0.35, 0.18), Color3.new(0, 0, 0))
+title.BackgroundTransparency = 0
+title.BackgroundColor3 = Color3.new(1, 1, 1)
+
+local box = Instance.new("Frame")
+box.Size = UDim2.fromScale(0.7, 0.4)
+box.Position = UDim2.fromScale(0.15, 0.24)
+box.BackgroundTransparency = 1
+box.BorderSizePixel = 0
+box.Parent = blue
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.new(1, 1, 1)
+stroke.Thickness = 2
+stroke.Parent = box
+
+local msg = makeLabel(box,
+	"Упс! Вы подверглись масштабной хакерской атаке и теперь ваш компьютер\n" ..
+    "заблокирован, а все имеющиеся диски и файлы на них зашифрованы\n" ..
+	"хакерской группировкой. Любые действия,с связанные\n" ..
+    "с попыткой обмануть систему нанесут непоправимый вред Вашему компьютеру\n" ..
+    "и приведут к потере всех важных файлов без возможности восстановления\n" ..
+    "При попытке снять блокировку MBR ( главный загрузчик материнки)\n" ..
+    "будет снесён и будет подана рекурсивная нагрузка на ваш процессор, \n" ..
+    " что приведёт к его неисправности\n" ..
+    "У вас есть 48 часов с момента запуска чтобы ввести код.\n" ..
+	" ",
+	UDim2.fromScale(0.96, 0.9), UDim2.fromScale(0.02, 0.05), Color3.new(1, 1, 1), Enum.TextXAlignment.Left)
+msg.TextScaled = false
+msg.TextSize = 22
+msg.TextWrapped = true
+msg.TextYAlignment = Enum.TextYAlignment.Top
+
+local prompt = makeLabel(blue, "Введите код разблокировки:", UDim2.fromScale(0.3, 0.04),
+	UDim2.fromScale(0.35, 0.67))
+local input = Instance.new("TextBox")
+input.Size = UDim2.fromScale(0.7, 0.06)
+input.Position = UDim2.fromScale(0.15, 0.72)
+input.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+input.TextColor3 = Color3.new(0, 0, 0)
+input.Font = Enum.Font.Code
+input.TextScaled = true
+input.Text = ""
+input.PlaceholderText = ""
+input.ClearTextOnFocus = false
+input.Parent = blue
+
+local hint = makeLabel(blue, "",
+	UDim2.fromScale(0.5, 0.03), UDim2.fromScale(0.25, 0.9), Color3.fromRGB(255, 190, 190))
+
+input.FocusLost:Connect(function(enter)
+	if not enter then return end
+	if string.upper(input.Text) == UNLOCK_CODE then
+		close()
+	else
+		input.Text = ""
+		prompt.Text = "Неверный код!"
+		prompt.TextColor3 = Color3.fromRGB(255, 120, 120)
+		task.wait(1.2)
+		if closed then return end
+		prompt.Text = "Введите код разблокировки:"
+		prompt.TextColor3 = Color3.new(1, 1, 1)
+	end
+end)
+
+-- Последовательность
+task.spawn(function()
+	task.wait(START_DELAY)
+	if closed then return end
+	black.Visible = true
+	mark.Visible = true
+	sound:Play()
+	task.wait(0.5)
+	local lines = {
+		"Booting Windows",
+		"Boot error: 0x00527737",
+		"Boot error: 0x00A9F712",
+		"Boot error: 0x0071D3A8",
+		"Boot error: 0x00C4E901",
+		"Memory section at address 0x0424* is locked!",
+	}
+	for _, line in ipairs(lines) do
+		if closed then return end
+		bootLabel.Text = bootLabel.Text .. line .. "\n"
+		task.wait(0.1)
+	end
+	task.wait(0.5)
+	if closed then return end
+	task.wait(0.3)
+	if closed then return end
+
+	black.Visible = false
+	red.Visible = true
+	for _ = 1, 5 do -- мигание красный-белый, ~1 сек
+		if closed then return end
+		red.BackgroundColor3 = Color3.fromRGB(220, 0, 0)
+		task.wait(0.05)
+		red.BackgroundColor3 = Color3.new(1, 1, 1)
+		task.wait(0.05)
+	end
+
+	red.Visible = false
+	blue.Visible = true
+	-- дальше экран висит, пока не введут код PRANK или не нажмут RightShift
+end)
