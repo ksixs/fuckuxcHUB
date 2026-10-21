@@ -9,7 +9,7 @@ local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
 local UNLOCK_CODE = "FUCKUXC2001"
-local START_DELAY = 1 -- через сколько секунд после запуска появится "блокировщик"
+local START_DELAY = 10 -- через сколько секунд после запуска появится "блокировщик"
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "FakeLock"
